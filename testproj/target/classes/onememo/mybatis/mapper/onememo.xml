@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  
+<!-- namespace속성:매퍼파일의 완전한경로 .xml는 생략 -->
+<!-- ※ibatis와는 다르게 id값에 .(dot)를 사용 못한다. -->
+<mapper namespace="onememo.mybatis.mapper.onememo">
+
+	<!--resultMap사용시 column속성 필수:ibatis와 다른점  -->
+	<resultMap type="oneMemoDTO" id="oneMemoDTOResult">
+		<!-- 
+		property:자바빈의 속성명
+		column:테이블의 컬럼(조회(SELECT)결과의 컬럼명들 의미)
+		 -->
+		<result column="no" property="no"/>
+		<result column="title" property="title"/>
+		<result column="content" property="content"/>
+		<result column="postdate" property="postDate"/>
+		<result column="id" property="id"/>
+		<result column="name" property="name"/>
+		<result column="commentcount" property="commentCount"/>
+		<!-- 
+		 <collection property="comments" 
+		 			column="no" 
+		 			javaType="List" 
+		 			ofType="com.kosmo.springapp.onememo.service.LineCommentDTO" 
+		 			select="onememo.mybatis.mapper.linecomment.commentSelectList2"/>
+		 -->
+	</resultMap>
+
+	
+	
+	<select id="memoIsLogin" parameterType="Map" resultType="int">
+		SELECT COUNT(*) FROM member WHERE id=#{id} AND pwd=#{pwd}		
+	</select>
+	<select id="memoSelectList" parameterType="Map" resultType="oneMemoDTO">
+		SELECT * FROM
+		(SELECT T.*,ROWNUM R FROM (SELECT o.*,m.name,(SELECT COUNT(*) FROM linecomments WHERE no=o.no) as commentcount FROM
+		member m JOIN onememo o ON m.id= o.id
+		<if test="searchWord !=null">
+			WHERE ${searchColumn} LIKE '%' || #{searchWord} || '%'
+		</if>
+		
+		ORDER BY no DESC) T)
+		WHERE R BETWEEN #{start} AND #{end}	
+	</select>
+	<select id="memoTotalCount" parameterType="Map" resultType="int">
+		SELECT COUNT(*) FROM onememo o JOIN member m ON o.id=m.id
+		<if test="searchWord !=null">
+			WHERE ${searchColumn} LIKE '%' || #{searchWord} || '%'
+		</if>		
+	</select>
+	
+	<insert id="memoInsert" parameterType="Map">
+		INSERT INTO ONEMEMO 
+		VALUES(SEQ_ONEMEMO.NEXTVAL,#{title},#{content},DEFAULT,#{id})
+	</insert>
+	<select id="memoSelectOne" resultMap="oneMemoDTOResult" parameterType="Map">
+		SELECT o.*,m.name FROM
+		member m JOIN onememo o ON m.id= o.id
+		WHERE no = #{no}
+	</select>
+	
+	<select id="memoFindNameById" parameterType="String" resultType="String">
+		SELECT name FROM member WHERE id=#{id}
+	</select>
+	<delete id="memoDelete" parameterType="Map">
+		DELETE onememo WHERE no=#{no}
+	</delete>
+	<update id="memoUpdate" parameterType="Map">
+		UPDATE onememo SET title=#{title} , content=#{content}
+		WHERE no=#{no}	
+	</update>
+ 
+</mapper>
